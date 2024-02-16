@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import subprocess
-from typing import Union
+from typing import List, Union
 
 import click
 import logging
@@ -57,7 +57,31 @@ def get_device(given_input: str) -> Union[Emulator, GenyAWS, GenySAAS, None]:
 def cli():
     pass
 
+def list_target_devices() -> List:
+    # run avdmanager to get list of devices
+    cmd = "/usr/bin/avdmanager list target"
+    result = subprocess.check_output(cmd, shell=True).decode("utf-8")
+    devices = result.split("\n")
+    results = []
+    # return the name and the id of the device
+    device_result = {}
+    for i, d in enumerate(devices):
+        if "id:" in d:
+            device_result["id"] = (d.split(" ")[1], d.split(" ")[3])
+        if "Name:" in d:
+            device_result["name"] = d.split(" ")[2]
+            results.append(device_result)
+            device_result = {}
+    return results
 
+def list_connected_devices() -> List:
+    # run adb devices to get list of devices
+    cmd = "/usr/bin/adb devices"
+    result = subprocess.check_output(cmd, shell=True).decode("utf-8")
+    devices = result.split("\n")[1::]
+    return [d.split("\t")[0] for d in devices if d != ""]
+
+ 
 def start_appium() -> None:
     if convert_str_to_bool(os.getenv(ENV.APPIUM)):
         cmd = f"/usr/bin/appium"
